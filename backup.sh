@@ -15,7 +15,7 @@ exclude_paths=(
 )
 
 usage="$(basename "$0") [-h] [-V volume] [-o output_path] [-k kwallet_name] [-p kwallet_entry] [-i included_paths] [-e excluded_paths]
-Script automatically mounting veracrypt value and backing up specified paths using rsync
+Script automatically mounting veracrypt volume and backing up specified paths using rsync
 
 Password to veracrypt volume is obtained from:
 - local variable \$veracrypt_volume_password
