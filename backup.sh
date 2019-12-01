@@ -9,12 +9,13 @@ kwallet_name="kdewallet"
 kwallet_entry="veracrypt_backup"
 
 target_path=""
+rsync_options="-avR"
 include_paths=(
 )
 exclude_paths=(
 )
 
-usage="$(basename "$0") [-h] [-V volume] [-o output_path] [-k kwallet_name] [-p kwallet_entry] [-i included_paths] [-e excluded_paths]
+usage="$(basename "$0") [-h] [-V volume] [-o output_path] [-k kwallet_name] [-p kwallet_entry] [-i included_paths] [-e excluded_paths] [--rsync-options options]
 Script automatically mounting veracrypt volume and backing up specified paths using rsync
 
 Password to veracrypt volume is obtained from:
@@ -29,7 +30,8 @@ Options:
   -k, --kwallet-name        kwallet name (default: kdewallet)
   -p, --kwallet-entry       kwallet entry name (default: veracrypt_backup)
   -i, --include             path to the file containing paths that should be backed up
-  -e, --exclude             path to the file containing paths/names that should be excluded"
+  -e, --exclude             path to the file containing paths/names that should be excluded
+  --rsync-options           options passed to rsync (default: -avR)"
 
 isKwalletInstalled() {
     hash kwallet-query
@@ -89,7 +91,7 @@ backup() {
 
     # rsync - backup files
     set +e
-    rsync -avR ${exclude_flags} ${include_args} ${target_path}
+    rsync ${rsync_options} ${exclude_flags} ${include_args} ${target_path}
     set -e
 }
 
@@ -113,34 +115,37 @@ while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
     shift; kwallet_entry=$1
     ;;
   -i | --include )
-    shift; mapfile -t include_paths < $1
+    shift; mapfile -t include_paths < "$1"
     ;;
   -e | --exclude )
-    shift; mapfile -t exclude_paths < $1
+    shift; mapfile -t exclude_paths < "$1"
+    ;;
+  -r | --rsync-options )
+    shift; rsync_options="$1"
     ;;
 
 esac; shift; done
 if [[ "$1" == '--' ]]; then shift; fi
 
 # Validate options
-if [[ -z "$veracrypt_volume" ]]; then
-    echo "Veracrypt volume not provided. Use --veracrypt-volume option."
-    exit 2
-fi
-
 if [[ -z "$target_path" ]]; then
     echo "Mounting point is not specified. Use --output option."
     exit 2
 fi
 
+# Mount VeraCrypt volume only if -V option was provided
+if [[ -n "$veracrypt_volume" ]]; then
+    mountVeracryptVolume
+    mount_result=$?
 
-mountVeracryptVolume
-mount_result=$?
-
-if [[ "$mount_result" -ne "0" ]]; then
-    echo "Failed to mount veracrypt volume" 1>&2
-    exit 3
+    if [[ "$mount_result" -ne "0" ]]; then
+        echo "Failed to mount veracrypt volume" 1>&2
+        exit 3
+    fi
 fi
 
 backup
-unmountVeracryptVolume
+
+if [[ -n "$veracrypt_volume" ]]; then
+    unmountVeracryptVolume
+fi
