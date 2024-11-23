@@ -68,7 +68,7 @@ fetchVeracryptPassword() {
 
 mountVeracryptVolume() {
     password=$(fetchVeracryptPassword)
-    echo "$password" | sudo veracrypt -t --non-interactive -m timestamp ${veracrypt_volume} ${target_path} --stdin
+    echo "$password" | sudo veracrypt -t --non-interactive -m timestamp ${veracrypt_volume} "${target_path}" --stdin
     return $?
 }
 
@@ -91,7 +91,7 @@ backup() {
 
     # rsync - backup files
     set +e
-    rsync ${rsync_options} ${exclude_flags} ${include_args} ${target_path}
+    rsync ${rsync_options} ${exclude_flags} ${include_args} "${target_path}"
     set -e
 }
 
@@ -103,16 +103,16 @@ while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
     exit 0
     ;;
   -V | --veracrypt-volume )
-    shift; veracrypt_volume=$1
+    shift; veracrypt_volume="$1"
     ;;
   -o | --output )
-    shift; target_path=$1
+    shift; target_path="$1"
     ;;
   -k | --kwallet-name )
-    shift; kwallet_name=$1
+    shift; kwallet_name="$1"
     ;;
   -p | --kwallet-entry )
-    shift; kwallet_entry=$1
+    shift; kwallet_entry="$1"
     ;;
   -i | --include )
     shift; mapfile -t include_paths < "$1"
